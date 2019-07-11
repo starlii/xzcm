@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xzcmapi.mapper.ActivityMapper">
+
+
+   <sql id="activity">
+      a.id activityId,
+      a.activity_name activityName,
+      a.activity_start_time activityStartTime,
+      a.activity_end_time activityEndTime,
+      IFNULL(p.players,0) activityPlayers,
+      IFNULL(a.act_views,0) actViews,
+      IFNULL(a.mual_views,0) mualViews,
+      a.activity_url activityUrl,
+      IFNULL(a.activity_status,0) activityStatus,
+      a.activity_remark activityRemark,
+      a.activity_remarksec activityRemarkSec,
+      a.activity_image activityImage,
+      a.create_time createTime,
+      IFNULL(p.actualVotes,0) actVotes,
+      IFNULL(p.manualVotes,0) mualVotes,
+      IFNULL(a.activity_shares,0) activityShares
+   </sql>
+
+   <select id="get" resultType="com.xzcmapi.model.ActivityModel">
+      select
+      (IFNULL(p.manualVotes,0) + IFNULL(p.actualVotes,0)) votes,
+      (IFNULL(a.mual_views,0) + IFNULL(a.act_views,0)) activityViews,
+      IFNULL(gift.activityAmount,0) activityAmount,
+      <include refid="activity"/>
+      from  xzcm_activity a left join xzcm_system_user u on a.creator = u.id left join
+      (select sum(actual_votes) actualVotes,sum(manual_votes) manualVotes,count(*) players,activity_id from xzcm_activity_player group by activity_id) p on p.activity_id = a.id
+      left join (SELECT SUM(gift_amount) activityAmount, activity_id FROM xzcm_gift_log  GROUP BY activity_id) gift on gift.activity_id = a.id
+      where 1=1
+      <if test="search != null">
+         and (a .activity_name like CONCAT('%',#{search}, '%')
+         or a.activity_remark like CONCAT('%',#{search}, '%')
+         or a.activity_remarksec like CONCAT('%',#{search}, '%'))
+      </if>
+      <if test="time != null">
+        and   TO_DAYS(a.activity_end_time) = TO_DAYS(#{time})
+      </if>
+      <if test="status != null and status == 1">
+         and a.activity_status = 2
+      </if>
+      <if test="status != null and status == 2">
+         and a.activity_status = #{status}
+      </if>
+      <if test="status != null and status == 3">
+         and a.activity_status = #{status}
+      </if>
+      <if test="status != null and status == 4">
+         and (a.activity_status = #{status} or TO_DAYS(a.activity_start_time) = TO_DAYS(now()))
+      </if>
+      <if test="status != null and status == 5">
+         and TO_DAYS(a.activity_end_time) = TO_DAYS(now())
+      </if>
+      <if test="status != null and status == 6">
+         and a.activity_start_time &gt; now()
+      </if>
+      <if test="userId != null and isSelf == false">
+         and (u.role_value like CONCAT(#{role},'%'))
+      </if>
+      <if test="userId != null and isSelf == true">
+         and u.id = #{userId}
+      </if>
+      order by a.activity_start_time desc
+   </select>
+
+   <select id="getAllActivityDate" resultType="com.xzcmapi.model.ActivityDateModel">
+      SELECT
+      a.id activityId,
+      a.approval_status approvalStatus,
+      max(a.activity_start_time) activetyStartTime,
+      max(a.activity_end_time) activityEndTime,
+      max(s.vote_start_time) voteStartTime,
+      max(s.vote_end_time) voteEndTime
+      FROM xzcm_activity a LEFT JOIN xzcm_activity_setting s on
+      a.id = s.activity_id GROUP BY a.id
+   </select>
+
+   <select id="getActivityStar" resultType="com.xzcmapi.model.ActivityStarModel">
+      SELECT id playerId,activity_id activityId
+        FROM xzcm_activity_player
+        GROUP BY activity_id HAVING max(ifnull(actual_votes,0) + ifnull(manual_votes,0));
+   </select>
+
+   <select id="getH5HomePage" resultType="com.xzcmapi.model.H5HomePageModel">
+      SELECT a.id activitId,a.star starPlayer,vt.votes votes ,
+        (IFNULL(a.act_views,0) + IFNULL(a.mual_views,0)) views ,
+        players.playerNum,
+        a.activity_start_time activityStartTime,
+        a.activity_end_time activityEndTime,
+        s.vote_start_time voteStartTime,
+        s.vote_end_time voteEndTime
+        FROM xzcm_activity a  LEFT JOIN
+        (SELECT activity_id , COUNT(*) playerNum FROM xzcm_activity_player GROUP BY activity_id) players
+        on players.activity_id = a.id left join (SELECT SUM(IFNULL(manual_votes,0)+IFNULL(actual_votes,0)) votes FROM xzcm_activity_player WHERE activity_id = #{activityId}) vt on 1=1
+          LEFT JOIN xzcm_activity_setting s on s.activity_id = a.id where a.id = #{activityId}
+   </select>
+
+   <select id="getDeleteModel" resultType="com.xzcmapi.model.DeleteFileModel">
+      SELECT a.id activityId, p.id playerId FROM xzcm_activity a LEFT JOIN xzcm_activity_player p
+      ON a.id = p.activity_id LEFT JOIN xzcm_system_user u ON a.creator=u.id
+      where 1=1
+      <if test="userId != null">
+        and (u.role_value like CONCAT(#{role},'%'))
+      </if>
+   </select>
+
+</mapper>

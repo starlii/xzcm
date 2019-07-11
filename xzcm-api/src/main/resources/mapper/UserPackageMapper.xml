@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xzcmapi.mapper.UserPackageMapper">
+
+<select id="get" resultType="com.xzcmapi.entity.UserPackage">
+              SELECT p.id,
+                p.`name` ,
+                p.description,
+                p.`status`,
+                p.agent_value agentValue,
+                p.create_time createTime,
+                p.creator
+            FROM xzcm_user_package	p LEFT JOIN xzcm_system_user u
+            ON p.creator = u.id
+            WHERE 1=1
+            <if test="id != null">
+                and p.id = #{id}
+            </if>
+            <if test="userId != null">
+                and (u.role_value like CONCAT(#{role},'%'))
+            </if>
+</select>
+</mapper>

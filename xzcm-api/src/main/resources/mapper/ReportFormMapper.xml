@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xzcmapi.mapper.ReportFormMapper">
+
+   <select id="settlement" resultType="com.xzcmapi.model.SettlementModel">
+            SELECT r.id,
+               u.user_username username,
+               r.create_time createTime,
+               ifnull(r.activitys,0) activitys,
+               ifnull(r.amount,0) amount,
+               ifnull(p.agent_value,0) agentValue,
+               ifnull(p.agent_value*r.amount,0) agentAmount,
+               r.`status`
+             FROM xzcm_report_form r LEFT JOIN xzcm_system_user u
+            ON r.user_id = u.id LEFT JOIN xzcm_user_package p on u.user_package = p.id where r.type = 0
+                  <if test="startTime != null">
+                     and r.create_time &gt;= #{startTime}
+                  </if>
+                  <if test="endTime != null">
+                     and r.create_time &lt;= #{endTime}
+                  </if>
+                  <if test="username != null">
+                     and u.user_username like CONCAT('%',#{username},'%')
+                  </if>
+                  <if test="userId != null">
+                     and (u.role_value like CONCAT(#{role},'%'))
+                  </if>
+      order by r.create_time desc
+   </select>
+
+   <select id="charge" resultType="com.xzcmapi.model.ChargeModel">
+            SELECT  r.id,
+                  u.user_username username,
+                  r.create_time createTime,
+                  IFNULL(r.transactions,0) transactions,
+                  IFNULL(r.amount,0) amount
+            FROM xzcm_report_form r LEFT JOIN xzcm_system_user u
+              ON r.user_id = u.id where r.type = 1
+               <if test="startTime != null">
+                  and r.create_time &gt;= #{startTime}
+               </if>
+               <if test="endTime != null">
+                  and r.create_time &lt;= #{endTime}
+               </if>
+               <if test="username != null">
+                  and u.user_username like CONCAT('%',#{username},'%')
+               </if>
+               <if test="userId != null">
+                  and (u.role_value like CONCAT(#{role},'%'))
+               </if>
+            ORDER by	r.create_time DESC
+   </select>
+</mapper>

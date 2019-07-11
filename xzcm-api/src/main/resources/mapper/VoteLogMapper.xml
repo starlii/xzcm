@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xzcmapi.mapper.VoteLogMapper">
+
+   <select id="getUserLimit" resultType="int">
+        SELECT
+	  COUNT(*)
+      FROM
+	    xzcm_vote_log v LEFT JOIN xzcm_activity_player p ON v.player_id = p.id
+      WHERE
+	    TO_DAYS(v.create_time) = TO_DAYS(NOW())
+      AND v.open_id = #{openId}
+        AND v.player_id = #{playerId} and p.activity_id = #{activityId}
+   </select>
+
+   <select id="getDayLimit" resultType="int">
+      SELECT COUNT(*) FROM xzcm_vote_log v LEFT JOIN xzcm_activity_player p ON v.player_id = p.id
+       WHERE TO_DAYS(v.create_time) = TO_DAYS(NOW()) AND v.open_id = #{openId} and p.activity_id = #{activityId}
+   </select>
+
+   <select id="getUserVoteSum" resultType="int">
+      SELECT count(*) FROM xzcm_vote_log v LEFT JOIN xzcm_activity_player p ON v.player_id = p.id
+       WHERE v.open_id = #{openId} and p.activity_id = #{activityId}
+   </select>
+
+   <select id="voteInternal" resultType="int">
+      SELECT timestampdiff(minute,create_time,NOW()) FROM xzcm_vote_log WHERE open_id = #{openId} ORDER BY create_time DESC LIMIT 0,1
+   </select>
+
+   <select id="getVoteLog" resultType="com.xzcmapi.entity.VoteLog">
+      SELECT g.id,
+      a.activity_name activityName,
+      a.id activityId,
+      g.name,
+      g.remark,
+      g.ip,
+      g.create_time createTime,
+      g.creator,
+      g.player_id playerId,
+      g.open_id openId
+      ,p.name playerName FROM xzcm_activity a INNER JOIN xzcm_activity_player p on a.id  = p.activity_id
+      INNER JOIN xzcm_vote_log g ON p.id = g.player_id inner join xzcm_system_user u on a.creator = u.id
+      <if test="activityId != null">
+         WHERE a.id = #{activityId}
+      </if>
+      <if test="userId != null and self == null">
+         and u.role_value like concat(#{role},'%')
+      </if>
+      <if test="userId != null and self != null">
+         and a.creator = #{userId}
+      </if>
+      order by g.create_time desc
+   </select>
+</mapper>

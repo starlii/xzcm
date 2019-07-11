@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xzcmapi.mapper.UserMapper">
+
+    <resultMap id="UserResultMap" type="com.xzcmapi.entity.User">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_username" property="username" jdbcType="VARCHAR"/>
+        <result column="user_password" property="password" jdbcType="VARCHAR"/>
+        <result column="user_status" property="status" jdbcType="INTEGER"/>
+        <result column="user_package" property="userPackage" jdbcType="INTEGER"/>
+        <result column="user_remark" property="remark" jdbcType="INTEGER"/>
+        <result column="user_usage_start" property="userUsageStart" jdbcType="INTEGER"/>
+        <result column="user_usage_end" property="userUsageEnd" jdbcType="INTEGER"/>
+        <result column="user_updatetime" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="creator" property="creator" jdbcType="BIGINT"/>
+        <result column="ip" property="ip" jdbcType="VARCHAR"/>
+        <result column="login_time" property="loginTime" jdbcType="TIMESTAMP"/>
+        <result column="role" property="role" jdbcType="VARCHAR"/>
+        <result column="name" property="packageName" jdbcType="VARCHAR"/>
+        <result column="roleName" property="roleName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="userSql">
+        u.id ,
+        u.user_username,
+        u.user_password,
+        u.user_status,
+        u.user_package,
+        u.user_remark,
+        u.user_usage_start,
+        u.user_usage_end,
+        u.user_updatetime,
+        u.create_time,
+        u.creator,
+        u.ip,
+        u.login_time,
+        u.role
+    </sql>
+
+    <select id="get" parameterType="string" resultMap="UserResultMap">
+        select <include refid="userSql"/> ,p.name,
+        case when u.role = 'system' then '一级用户' when u.role = 'admin' then '二级用户' when u.role = 'manager' then '三级用户' end roleName
+        from xzcm_system_user u left join xzcm_user_package p on p.id = u.user_package where 1=1
+        <if test="username != null">
+          and  u.user_username like CONCAT('%',#{username}, '%')
+        </if>
+        <if test="userId != null">
+           and (u.role_value like CONCAT(#{role},'%'))
+        </if>
+        <if test="id != null">
+           and u.id = #{id}
+        </if>
+        <if test="userPackage != null">
+            and u.user_package = #{userPackage}
+        </if>
+        order by create_time desc
+    </select>
+
+    <select id="findByUserName" resultMap="UserResultMap">
+        SELECT *
+        FROM xzcm_system_user u
+        WHERE u.user_username = #{username}
+    </select>
+
+
+    <insert id="saveUserRole" parameterType="long">
+        INSERT INTO xzcm_system_roluser (user_id, role_id, create_time)
+        SELECT
+        #{userId},
+        #{roleId},
+        NOW()
+            FROM dual
+        WHERE NOT EXISTS(SELECT
+        user_id,
+        role_id
+        FROM xzcm_system_roluser
+        WHERE user_id = #{userId} AND role_id = #{roleId})
+        AND EXISTS(SELECT id
+        FROM xzcm_system_user
+        WHERE id = #{userId})
+        AND EXISTS(SELECT id
+        FROM xzcm_system_role
+        WHERE id = #{roleId} AND role_status = 0)
+    </insert>
+
+
+</mapper>

@@ -1,0 +1,62 @@
+#公共配置
+server:
+  #端口号
+  port: 8080
+  context-path: /
+  # session最大超时时间(分钟)，默认为30
+  session:
+    timeout: 6000
+  compression:
+    enabled: true
+    mime-types: text/html,text/css,application/javascript,application/json
+  tomcat:
+    max-threads: 800
+    uri-encoding: UTF-8
+    connectionTimeout: 100
+    acceptCount: 2000
+#    basedir: /data/apps/tmp
+spring:
+  application:
+    name: xzcm-api
+  #返回时间格式化
+  jackson:
+    date-format: 'yyyy-MM-dd HH:mm:ss'
+    serialization.indent_output: true
+    parser:
+        ALLOW_UNQUOTED_CONTROL_CHARS: true
+    time-zone: GMT+8
+
+  #激活哪一个环境的配置文件
+  profiles:
+    active: dev
+  #上传文件大小
+  http:
+    multipart:
+      enabled: true
+      max-file-size: 100mb
+      max-request-size: 100mb
+#      location: /data/tmp
+
+
+#通用mapper
+mapper:
+  mappers:
+      - com.xzcmapi.util.MyMapper
+  not-empty: false
+  identity: MYSQL
+
+#分页插件
+pagehelper:
+  helperDialect: mysql
+  reasonable: true
+  supportMethodsArguments: true
+  params: count=countSql
+
+xzcm:
+  url: 47.107.180.92:8081/api
+  domain: .qianchengchuanmei.com/#/home
+  wechatAppid: wxd0ee876c47b05860
+  wechatMerid: 1520920221
+  wechatSignkey: 429c6f104d57eb2b574a03341bf579d1
+  wechatCallback: http://47.107.180.92:8081/api/wx/notify
+  createOrderURL: https://api.mch.weixin.qq.com/pay/unifiedorder

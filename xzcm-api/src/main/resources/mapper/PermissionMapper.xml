@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xzcmapi.mapper.PermissionMapper">
+    <resultMap id="PermissionResultMap" type="com.xzcmapi.entity.Permission">
+		<id column="id" property="id" jdbcType="BIGINT"/>
+		<result column="reso_parentid" property="parentId" jdbcType="BIGINT"/>
+		<result column="reso_name" property="name" jdbcType="VARCHAR"/>
+		<result column="reso_code" property="code" jdbcType="VARCHAR"/>
+		<result column="reso_path" property="url" jdbcType="VARCHAR"/>
+		<result column="reso_type" property="type" jdbcType="INTEGER"/>
+		<result column="reso_icon" property="icon" jdbcType="VARCHAR"/>
+		<result column="reso_order" property="sort" jdbcType="VARCHAR"/>
+		<result column="reso_remark" property="path" jdbcType="VARCHAR"/>
+		<result column="reso_status" property="isLock" jdbcType="INTEGER"/>
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+		<result column="reso_filetype" property="resoFileType" jdbcType="INTEGER"/>
+		<result column="reso_value" property="value" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<resultMap id="treeMap" type="com.xzcmapi.model.TreeNode">
+		<id column="id" property="id" jdbcType="BIGINT" />
+		<result column="parent_id" property="parentId" jdbcType="BIGINT" />
+		<result column="reso_name" property="name" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!--根据用户ID查询该用户所拥有的权限列表-->
+	<select id="findListPermissionByRoleId" parameterType="Long" resultMap="PermissionResultMap">
+		SELECT
+			t1.*
+		FROM
+			xzcm_system_rolres t
+		LEFT JOIN xzcm_system_resource t1 ON t.reso_id = t1.id
+		WHERE
+			t.role_id = #{roleId}
+	</select>
+
+
+	<!--根据用户ID查询该用户所拥有的权限列表-->
+	<select id="findListPermissionByUserId" parameterType="Long" resultMap="PermissionResultMap">
+		SELECT
+			*
+		FROM
+			permission p
+		WHERE
+ 			p.type != '0'
+ 			AND p.id IN
+ 			(SELECT
+				rp.permission_id
+			FROM
+				role_permission rp
+			WHERE
+				rp.role_id IN (
+					SELECT
+						ur.role_id
+					FROM
+						user_role ur
+					WHERE
+						ur.user_id = #{userId}
+				)
+		);
+	</select>
+
+	<!--根据用户ID查询用户菜单列表-->
+	<select id="findMenuListByUserId" parameterType="Long" resultMap="PermissionResultMap">
+		SELECT
+			*
+		FROM
+			xzcm_system_resource p
+		WHERE
+ 			p.id IN
+ 			(SELECT
+				rp.reso_id
+			FROM
+				xzcm_system_rolres rp
+			WHERE
+				rp.role_id IN (
+					SELECT
+						ur.role_id
+					FROM
+						xzcm_system_roluser ur
+					WHERE
+						ur.user_id = #{userId}
+				)
+			  ) order by p.id asc;
+	</select>
+
+	<!--返回树列表-->
+	<select id="findTreeList" resultMap="treeMap">
+		SELECT id,reso_parentid,reso_name FROM xzcm_system_resource p  order by p.id asc
+	</select>
+</mapper>

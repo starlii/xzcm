@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xzcmapi.mapper.TransactionMapper">
+
+   <select id="getTodayDeals" resultType="com.xzcmapi.model.TodayDealsModel">
+      SELECT
+      SUM(CASE WHEN (TO_DAYS(NOW()) - TO_DAYS(t.transaction_time)) = 1 THEN t.transaction_amount ELSE 0.0000 end) yesterdayDeals,
+	  SUM(CASE WHEN TO_DAYS(NOW())=TO_DAYS(t.transaction_time) THEN t.transaction_amount ELSE 0.0000 end) todayDeals,
+	  IFNULL(sum(t.transaction_amount),0.0000) AS totalDeals
+      FROM xzcm_activity_transaction t
+   </select>
+
+</mapper>

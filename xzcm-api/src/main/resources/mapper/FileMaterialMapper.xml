@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xzcmapi.mapper.FileMaterialMapper">
+
+    <select id="getDelete" resultType="com.xzcmapi.entity.FileMaterial">
+        SELECT id ,SUBSTRING_INDEX(file_url,'/',-1) fileUrl FROM xzcm_file_material WHERE type in (1,4) AND related_id in
+        <foreach collection="ids" item="id" open="(" close=")" separator="," >
+            #{id}
+        </foreach>
+    </select>
+
+</mapper>

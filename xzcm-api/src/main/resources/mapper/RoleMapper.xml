@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xzcmapi.mapper.RoleMapper">
+    <resultMap id="RoleResultMap" type="com.xzcmapi.entity.Role">
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="role_name" property="name" jdbcType="VARCHAR" />
+        <result column="role_status" property="status" jdbcType="INTEGER" />
+        <result column="role_remark" property="remark" jdbcType="VARCHAR" />
+        <result column="is_manager" property="isManager"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="creator" property="creator" jdbcType="BIGINT" />
+    </resultMap>
+
+    <!--根据用户ID查询角色对象信息-->
+    <select id="findByUserId" parameterType="java.lang.Long" resultMap="RoleResultMap">
+        SELECT
+            t1.*
+        FROM
+            xzcm_system_roluser t
+        LEFT JOIN xzcm_system_role t1 ON t.role_id = t1.id
+        where t.user_id=#{userId} AND t1.role_status = 0
+    </select>
+
+    <!--查找角色下的所有用户-->
+    <select id = "getAllUserByRoleId" parameterType="map" resultType="map">
+        SELECT
+	u.id AS userId,
+	u.user_username AS userName
+FROM
+	xzcm_system_user u
+LEFT JOIN xzcm_system_roluser ru ON u.id = ru.user_id
+        WHERE u.id != 1
+        <if test="id !=null">
+            AND ru.role_id = #{id}
+        </if>
+        <if test="name != null">
+            AND u.user_username LIKE CONCAT('%',#{name},'%')
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xzcmapi.mapper.GiftLogMapper">
+
+    <select id="getGiftLog" resultType="com.xzcmapi.entity.GiftLog">
+    SELECT g.id,
+        a.activity_name activityName,
+        a.id activityId,
+    g.name,
+    g.open_id openId,
+    g.gift,
+    g.gift_amount giftAmount,
+    g.order_id orderId,
+    g.business_id businessId,
+    g.status,
+    g.ip,
+    g.create_time createTime,
+    g.creator,
+    g.player_id playerId,
+    p.name playerName FROM xzcm_activity a INNER JOIN xzcm_activity_player p on a.id  = p.activity_id
+      INNER JOIN xzcm_gift_log g ON p.id = g.player_id inner join xzcm_system_user u on a.creator = u.id
+      <if test="activityId != null">
+          WHERE a.id = #{activityId}
+      </if>
+        <if test="userId != null  and self == null">
+            and u.role_value like concat(#{role},'%')
+        </if>
+        <if test="userId != null and self != null">
+            and a.creator = #{userId}
+        </if>
+        <if test="status != null">
+            and g.status = 0
+        </if>
+        order by g.create_time desc
+    </select>
+
+    <select id="getTodayDeals" resultType="com.xzcmapi.model.TodayDealsModel">
+        SELECT t1.todayDeals,
+        t2.yesterdayDeals,
+        t3.totalDeals,
+        t4.processings,
+        t5.todayStarts,
+        t6.todayEnds,
+        t7.activitys,
+        t8.notStarts,
+        t9.overs
+        FROM
+        (SELECT IFNULL(sum(g.gift_amount),0) todayDeals FROM xzcm_activity a INNER JOIN xzcm_gift_log g
+        on a.id = g.activity_id INNER JOIN xzcm_system_user u ON a.creator = u.id
+        WHERE TO_DAYS(g.create_time) = TO_DAYS(NOW()) and g.status = 0 and u.role_value LIKE CONCAT(#{role},'%')) t1 INNER JOIN
+
+        (SELECT IFNULL(sum(g.gift_amount),0) yesterdayDeals FROM xzcm_activity a INNER JOIN xzcm_gift_log g
+        on a.id = g.activity_id INNER JOIN xzcm_system_user u ON a.creator = u.id
+        WHERE  TO_DAYS(NOW()) - TO_DAYS(g.create_time) &lt;= 1 AND TO_DAYS(NOW()) - TO_DAYS(g.create_time) &gt; 0 and g.status = 0 and u.role_value LIKE CONCAT(#{role},'%')) t2 on 1=1 INNER JOIN
+
+        (SELECT IFNULL(sum(g.gift_amount),0) totalDeals FROM xzcm_activity a INNER JOIN xzcm_gift_log g
+        on a.id = g.activity_id INNER JOIN xzcm_system_user u ON a.creator = u.id WHERE u.role_value LIKE CONCAT(#{role},'%')) t3 on 1=1 INNER JOIN
+
+        (SELECT COUNT(*) processings FROM xzcm_activity a INNER JOIN xzcm_system_user u on u.id = a.creator WHERE a.activity_status = 2 and u.role_value LIKE CONCAT(#{role},'%')) t4 on 1=1 INNER JOIN
+
+        (SELECT COUNT(*) todayStarts FROM xzcm_activity a INNER JOIN xzcm_system_user u on u.id = a.creator WHERE TO_DAYS(a.activity_start_time) = TO_DAYS(NOW()) and u.role_value LIKE CONCAT(#{role},'%')) t5 on 1=1 INNER JOIN
+
+        (SELECT COUNT(*) todayEnds FROM xzcm_activity a INNER JOIN xzcm_system_user u on u.id = a.creator WHERE TO_DAYS(a.activity_end_time) = TO_DAYS(NOW()) and u.role_value LIKE CONCAT(#{role},'%')) t6 on 1=1 INNER JOIN
+
+        (SELECT COUNT(*) activitys FROM xzcm_activity a INNER JOIN xzcm_system_user u on u.id = a.creator WHERE  u.role_value LIKE CONCAT(#{role},'%')) t7 on 1=1 INNER JOIN
+
+        (SELECT COUNT(*) notStarts FROM xzcm_activity a INNER JOIN xzcm_system_user u on u.id = a.creator WHERE a.activity_start_time > NOW()  and u.role_value LIKE CONCAT(#{role},'%')) t8 on 1=1 inner JOIN
+
+        (SELECT COUNT(*) overs FROM xzcm_activity a INNER JOIN xzcm_system_user u on u.id = a.creator WHERE a.activity_status = 3  and u.role_value LIKE CONCAT(#{role},'%')) t9 on 1=1
+    </select>
+
+    <select id="getTodayDealsSelf" resultType="com.xzcmapi.model.TodayDealsModel">
+        SELECT t1.todayDeals,
+        t2.yesterdayDeals,
+        t3.totalDeals,
+        t4.processings,
+        t5.todayStarts,
+        t6.todayEnds,
+        t7.activitys,
+        t8.notStarts,
+        t9.overs
+        FROM
+        (SELECT IFNULL(sum(g.gift_amount),0) todayDeals FROM xzcm_activity a INNER JOIN xzcm_gift_log g
+        on a.id = g.activity_id INNER JOIN xzcm_system_user u ON a.creator = u.id
+        WHERE TO_DAYS(g.create_time) = TO_DAYS(NOW()) and g.status = 0 and u.id = #{userId}) t1 INNER JOIN
+
+        (SELECT IFNULL(sum(g.gift_amount),0) yesterdayDeals FROM xzcm_activity a INNER JOIN xzcm_gift_log g
+        on a.id = g.activity_id INNER JOIN xzcm_system_user u ON a.creator = u.id
+        WHERE  TO_DAYS(NOW()) - TO_DAYS(g.create_time) &lt;= 1 and g.status = 0 and u.id = #{userId}) t2 on 1=1 INNER JOIN
+
+        (SELECT IFNULL(sum(g.gift_amount),0) totalDeals FROM xzcm_activity a INNER JOIN xzcm_gift_log g
+        on a.id = g.activity_id INNER JOIN xzcm_system_user u ON a.creator = u.id WHERE u.id = #{userId}) t3 on 1=1 INNER JOIN
+
+        (SELECT COUNT(*) processings FROM xzcm_activity a INNER JOIN xzcm_system_user u on u.id = a.creator WHERE a.activity_status = 2 and u.id = #{userId}) t4 on 1=1 INNER JOIN
+
+        (SELECT COUNT(*) todayStarts FROM xzcm_activity a INNER JOIN xzcm_system_user u on u.id = a.creator WHERE TO_DAYS(a.activity_start_time) = TO_DAYS(NOW()) and u.id = #{userId}) t5 on 1=1 INNER JOIN
+
+        (SELECT COUNT(*) todayEnds FROM xzcm_activity a INNER JOIN xzcm_system_user u on u.id = a.creator WHERE TO_DAYS(a.activity_end_time) = TO_DAYS(NOW()) and u.id = #{userId}) t6 on 1=1 INNER JOIN
+
+        (SELECT COUNT(*) activitys FROM xzcm_activity a INNER JOIN xzcm_system_user u on u.id = a.creator WHERE  u.id = #{userId}) t7 on 1=1 INNER JOIN
+
+        (SELECT COUNT(*) notStarts FROM xzcm_activity a INNER JOIN xzcm_system_user u on u.id = a.creator WHERE a.activity_start_time > NOW()  and u.id = #{userId}) t8 on 1=1 inner JOIN
+
+        (SELECT COUNT(*) overs FROM xzcm_activity a INNER JOIN xzcm_system_user u on u.id = a.creator WHERE a.activity_status = 3  and u.id = #{userId}) t9 on 1=1
+    </select>
+
+</mapper>

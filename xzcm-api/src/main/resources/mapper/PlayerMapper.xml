@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xzcmapi.mapper.PlayerMapper">
+
+
+   <sql id="player">
+      p.num num,
+      p.id playerId,
+      p.`name`,
+      p.phone,
+      p.declaration,
+      (ifnull(p.actual_votes,0)+ifnull(p.manual_votes,0)) votes,
+      ifnull(p.actual_votes,0) actualVotes,
+      p.player_desc playerDesc,
+      p.image,
+      p.create_time createTime,
+      ifnull(p.views,0) views,
+      ifnull(p.shares,0) shares,
+      ifnull(p.ip_amount,0) ipAmount,
+      p.remark,
+      p.lock_status lockStatus,
+      p.approval_status approvalStatus,
+      p.vote_status voteStatus,
+      p.star,
+      p.schedul_status schedulStatus
+   </sql>
+   <select id="get" resultType="com.xzcmapi.model.PlayerModel">
+      SELECT
+       <include refid="player"/>,
+       r.rowNo rank,
+      ifnull(g.gift,0) gift,
+      a.activity_name activityName
+       FROM xzcm_activity_player p INNER JOIN (SELECT p.id AS id,(@rowNum:=@rowNum+1) AS rowNo
+       FROM xzcm_activity_player p,(SELECT @rowNum:=0) t WHERE p.activity_id = #{activityId} ORDER BY ifnull(p.actual_votes,0)+ifnull(p.manual_votes,0) desc) r on
+       p.id = r.id inner join xzcm_activity a on a.id = p.activity_id
+      left join (SELECT SUM(gift_amount) gift,player_id FROM xzcm_gift_log WHERE `status` = 0 GROUP BY player_id ) g on g.player_id = p.id
+      where 1=1
+      <if test="name != null and num == null">
+         and p.`name` like CONCAT('%',#{name}, '%')
+      </if>
+      <if test="id != null">
+         and p.id = #{id}
+      </if>
+      <if test="num != null and name == null">
+         and p.num = #{num}
+      </if>
+      <if test="num != null and name != null">
+         and (p.num = #{num} or p.`name` like CONCAT('%',#{name}, '%'))
+      </if>
+      <if test="approvalStatus != null">
+         and p.approval_status = #{approvalStatus}
+      </if>
+      <if test="sort == null">
+         order by (ifnull(p.actual_votes,0)+ifnull(p.manual_votes,0)) desc
+      </if>
+   </select>
+
+   <select id="getAll" resultType="com.xzcmapi.model.PlayerModel">
+      SELECT
+      ifnull(g.gift,0) gift,
+      a.activity_name activityName,
+      <include refid="player"/>
+      FROM xzcm_activity_player p inner join xzcm_activity a on a.id = p.activity_id inner join
+      xzcm_system_user u on u.id = a.creator
+      left join (SELECT SUM(gift_amount) gift,player_id FROM xzcm_gift_log WHERE `status` = 0 GROUP BY player_id) g on g.player_id = p.id
+      where p.approval_status = 1 and u.role_value like concat(#{role},'%')
+      <if test="name != null">
+         and p.`name` like CONCAT('%',#{name}, '%')
+      </if>
+      <if test="id != null">
+         and p.id = #{id}
+      </if>
+      <if test="num != null">
+         and p.num = #{num}
+      </if>
+      order by p.create_time desc
+   </select>
+
+   <select id="getExcel" resultType="com.xzcmapi.model.ExcelModel">
+      SELECT
+      <include refid="player"/>,
+       r.rowNo rank
+      FROM xzcm_activity_player p INNER JOIN (SELECT p.id AS id,(@rowNum:=@rowNum+1) AS rowNo
+       FROM xzcm_activity_player p,(SELECT @rowNum:=0) t WHERE p.activity_id = #{activityId} ORDER BY ifnull(p.actual_votes,0)+ifnull(p.manual_votes,0) desc) r on
+       p.id = r.id
+      where 1=1
+      <if test="playerIds != null">
+         and p.id in
+         <foreach collection="playerIds" item="id" open="(" close=")" separator="," >
+            #{id}
+         </foreach>
+      </if>
+      order by p.id asc
+   </select>
+
+   <select id="getVotesByActivity" resultType="com.xzcmapi.model.VotesModel">
+      SELECT SUM(manual_votes) mualVotes,SUM(actual_votes) actualVotes
+      FROM xzcm_activity_player WHERE activity_id = #{activityId}
+      GROUP BY activity_id
+   </select>
+
+   <select id="getH5PlayerDetail" resultType="com.xzcmapi.model.H5PlayerDetailModel">
+      SELECT
+        p.num num,
+	    p.id playerId,
+	    p.name,
+	    p.lock_status lockStatus,
+	    p.approval_status approvalStatus,
+	    p.vote_status voteStatus,
+	    p.declaration,
+	    IFNULL(p.actual_votes, 0) + IFNULL(p.manual_votes, 0) currentVotes,
+	    p.player_desc playerDesc,
+	    r.rowNo AS rank
+        FROM
+	    xzcm_activity_player p INNER JOIN (SELECT p.id AS id,(@rowNum:=@rowNum+1) AS rowNo FROM xzcm_activity_player p,
+	    (SELECT @rowNum := 0) t
+        WHERE
+	      p.activity_id = #{activityId} ORDER BY ifnull(p.actual_votes,0)+ifnull(p.manual_votes,0) desc) r ON r.id = p.id and p.id =  #{playerId}
+   </select>
+
+</mapper>

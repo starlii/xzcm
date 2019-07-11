@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xzcmapi.mapper.ReportMapper">
+   <select id="get" resultType="com.xzcmapi.entity.Report">
+      SELECT r.id ,
+       r.ip,
+       r.report_page reportPage,
+       r.report_times reportTimes,
+       r.report_content reportContent,
+       r.report_type reportType,
+       r.activity_id activityId,
+       r.player_id playerId,
+       r.create_time createTime,
+        a.activity_name activityName,
+        p.`name` playerName
+        FROM xzcm_report_record r LEFT JOIN xzcm_activity a on r.activity_id = a.id
+    LEFT JOIN xzcm_activity_player p on r.player_id = p.id left join xzcm_system_user u
+       on u.id = a.creator
+       where 1=1
+    <if test="activityId != null">
+        and a.id = #{activityId}
+    </if>
+       <if test="userId != null">
+           and (u.role_value like CONCAT(#{role},'%'))
+       </if>
+      order by r.create_time desc
+   </select>
+</mapper>
