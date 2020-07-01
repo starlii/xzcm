@@ -23,7 +23,7 @@
         <mapper-spring-boot.version>1.1.0</mapper-spring-boot.version>
         <pagehelper.version>4.1.1</pagehelper.version>
         <redisclient.version>2.8.0</redisclient.version>
-        <quartz.version>2.3.0</quartz.version>
+        <quartz.version>2.3.2</quartz.version>
     </properties>
 
     <dependencies>
